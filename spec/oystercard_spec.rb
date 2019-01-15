@@ -9,13 +9,11 @@ RSpec.describe Oystercard do
 
   describe '#top_up' do
 
-    it 'should respond to top_up method' do
-      expect(subject).to respond_to(:top_up)
+    it { is_expected.to respond_to(:top_up).with(1).argument }
+
+    it 'should return a new balance when monies are added' do
+      expect{subject.top_up 1 }.to change { subject.balance }.by 1
     end
-
-
-
-
-
+    
   end
 end
