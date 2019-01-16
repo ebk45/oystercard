@@ -1,7 +1,6 @@
 require 'oystercard'
 
 RSpec.describe Oystercard do
-
     it 'should have a balance of 0 by default' do
       expect(subject.balance).to eq(0)
     end
@@ -17,12 +16,6 @@ RSpec.describe Oystercard do
     end
   end
 
-  describe '#deduct' do
-    it 'should deduct monies from the oystercard' do
-      expect { subject.deduct 1 }.to change { subject.balance }.by -1
-    end
-  end
-
   describe '#in_journey' do
     it 'should be false when a new card is created' do
       expect(subject.in_journey?).to eq(false)
@@ -30,8 +23,17 @@ RSpec.describe Oystercard do
   end
 
   describe '#touch_in' do
+    before(:each) do
+      @card = Oystercard.new
+      @card.top_up(5)
+    end
     it 'should touch in the card' do
-      expect(subject).to respond_to(:touch_in)
+      expect(@card).to respond_to(:touch_in)
+    end
+
+    it 'should raise an error when card does not have minimum balance' do
+      min = Oystercard::MIN_BALANCE
+      expect { subject.touch_in }.to raise_error "You need to have a minimum of £#{min}.00 to travel"
     end
   end
 
@@ -39,20 +41,29 @@ RSpec.describe Oystercard do
     it 'should touch out the card' do
       expect(subject).to respond_to(:touch_out)
     end
-  end
 
 
   context '1. Card state should change during journey' do
+    before(:each) do
+      @card = subject
+      @card.top_up(5)
+    end
     it 'should start journey when touched in' do
-      subject.touch_in
-      expect(subject.in_journey?).to eq(true)
+      @card.touch_in
+      expect(@card.in_journey?).to eq(true)
     end
 
     it 'should end journey when touched out' do
-      subject.touch_in
-      subject.touch_out
-      expect(subject.in_journey?).to eq(false)
+      @card.touch_in
+      @card.touch_out
+      expect(@card.in_journey?).to eq(false)
     end
+
+    it 'should deduct monies when touched out' do
+      min = Oystercard::MIN_BALANCE
+      expect{@card.touch_out}.to change{@card.balance}.by(-min)
+    end
+  end
 
   end
 end
