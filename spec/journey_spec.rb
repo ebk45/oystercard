@@ -6,7 +6,4 @@ describe Journey do
   it '1. should log an entry station' do
     expect(subject.start(entry_station)).to eq(entry_station)
   end
-
-
-
 end
