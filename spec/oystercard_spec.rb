@@ -2,14 +2,11 @@ require 'oystercard'
 
 RSpec.describe Oystercard do
 
-  let(:station) { double(:station) }
+  let(:entry_station) { double(:station) }
+  let(:exit_station) { double(:station) }
 
-  it '1. should have an empty list of journeys by default' do
-    expect(subject.journeys).to eq []
-  end
-
-  it '2. should have a balance of 0 by default' do
-    expect(subject.balance).to eq 0
+  before(:each) do
+    subject.top_up(5)
   end
 
   describe '#top_up' do
@@ -24,61 +21,39 @@ RSpec.describe Oystercard do
   end
 
   describe '#touch_in' do
-    before(:each) do
-      @card = Oystercard.new
-      @card.top_up(5)
-    end
     it '1. should touch in the card' do
-      expect(@card).to respond_to(:touch_in)
+      expect(subject).to respond_to(:touch_in)
     end
 
     it '2. should raise an error when card does not have minimum balance' do
       min = Oystercard::MIN_BALANCE
-      expect { subject.touch_in(:station) }.to raise_error "You need to have a minimum of £#{min}.00 to travel"
+      subject.instance_variable_set(:@balance, 0)
+      expect { subject.touch_in(:entry_station) }.to raise_error "You need to have a minimum of £#{min}.00 to travel"
     end
+
+    it '3. should remember entry station after touch in' do
+      subject.touch_in(:entry_station)
+      expect(subject.journeys.last[:entry]).to eq(:entry_station)
+    end
+
   end
 
   describe '#touch_out' do
+    before(:each) do
+      subject.touch_in(:entry_station)
+    end
     it '1. should touch out the card' do
       expect(subject).to respond_to(:touch_out)
     end
 
-  context 'Recording Journeys:' do
-    before(:each) do
-      @card = subject
-      @card.top_up(5)
-    end
-    it '1. should start journey when touched in' do
-      @card.touch_in(:station)
-      expect(@card.in_journey?).to eq(true)
-    end
-
-    it '2. should end journey when touched out' do
-      @card.touch_in(:station)
-      @card.touch_out(:station)
-      expect(@card.in_journey?).to eq(false)
-    end
-
-    it '3. should deduct monies when touched out' do
+    it '2. should deduct monies when touched out' do
       min = Oystercard::MIN_BALANCE
-      expect{@card.touch_out(:station)}.to change{@card.balance}.by(-min)
+      expect { subject.touch_out(:exit_station) }.to change { subject.balance }.by(-min)
     end
 
-    it '4. should remember entry station after touch in' do
-      expect(@card.touch_in(:station)).to eq(@card.entry_station)
+    it '3. should show history of journeys' do
+      subject.touch_out(:exit_station)
+      expect(subject.journeys).to include({ entry: :entry_station, exit: :exit_station })
     end
-
-    it '5. should forget entry station after touch out' do
-      @card.touch_in(:station)
-      expect { @card.touch_out(:station) }.to change { @card.entry_station }.to([])
-    end
-
-    it '6. should show history of journeys' do
-      @card.touch_in(:station)
-      @card.touch_out(:station)
-      expect(@card.journeys).to include({:station => :station})
-    end
-  end
-
   end
 end
