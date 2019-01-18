@@ -30,8 +30,16 @@ class Oystercard
   end
   private
 
-  def deduct(monies)
-    @balance -= monies
+  def deduct(fare)
+    @balance -= fare
   end
 
 end
+
+# def amount
+#   if complete?
+#     fare
+#   else
+#     penalty
+#   end
+# end
